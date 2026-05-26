@@ -2,11 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
-  "env": {
-    "RAPIDAPI_KEY": "@rapidapi_key",
-    "RESEND_API_KEY": "@resend_api_key",
-    "RESEND_FROM_EMAIL": "@resend_from_email",
-    "ALERT_EMAIL": "@alert_email"
-  }
+  "regions": ["iad1"]
 }
