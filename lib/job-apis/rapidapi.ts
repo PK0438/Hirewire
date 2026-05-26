@@ -1,6 +1,12 @@
 import { Job } from '../types';
 import { normalizeJobType, stripHtml } from '../utils';
 
+interface MonetaryAmount {
+  '@type': string;
+  currency?: string;
+  value?: number | { minValue?: number; maxValue?: number; unitText?: string };
+}
+
 interface RapidApiJob {
   id: string;
   title: string;
@@ -14,8 +20,26 @@ interface RapidApiJob {
   location_type: string | null;
   locations_derived: string[];
   locations_alt_raw: string[];
-  salary_raw: string | null;
+  salary_raw: string | MonetaryAmount | null;
   remote_derived: boolean;
+}
+
+function parseSalary(raw: string | MonetaryAmount | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (typeof raw === 'string') return raw;
+  // JSON-LD MonetaryAmount object
+  const currency = raw.currency ?? 'USD';
+  const val = raw.value;
+  if (val && typeof val === 'object' && 'minValue' in val) {
+    const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+    const min = val.minValue ? fmt(val.minValue) : null;
+    const max = val.maxValue ? fmt(val.maxValue) : null;
+    if (min && max) return `${currency} ${min} – ${max}/yr`;
+    if (min) return `From ${currency} ${min}/yr`;
+    if (max) return `Up to ${currency} ${max}/yr`;
+  }
+  if (typeof val === 'number') return `${currency} ${Math.round(val).toLocaleString('en-US')}/yr`;
+  return undefined;
 }
 
 export async function fetchRapidApiJobs(
@@ -78,7 +102,7 @@ export async function fetchRapidApiJobs(
         postedAt: job.date_posted ?? new Date().toISOString(),
         source: 'rapidapi',
         sourceName: 'Active Jobs DB',
-        salary: job.salary_raw ?? undefined,
+        salary: parseSalary(job.salary_raw),
         tags: [],
         logo: job.organization_logo ?? undefined,
       };

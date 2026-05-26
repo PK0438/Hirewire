@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllJobs } from '@/lib/job-apis';
+import { fetchAllJobs, ALL_SOURCES } from '@/lib/job-apis';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -7,13 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get('query') ?? 'Data Engineer';
-  const sources = searchParams.get('sources')?.split(',') ?? [
-    'rapidapi',
-    'remotive',
-    'arbeitnow',
-    'jobicy',
-    'themuse',
-  ];
+  const sources = searchParams.get('sources')?.split(',') ?? ALL_SOURCES;
 
   try {
     const data = await fetchAllJobs(query, sources);

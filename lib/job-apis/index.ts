@@ -4,18 +4,24 @@ import { fetchRemotiveJobs } from './remotive';
 import { fetchArbeitnowJobs } from './arbeitnow';
 import { fetchJobicyJobs } from './jobicy';
 import { fetchMuseJobs } from './themuse';
+import { fetchRemoteOKJobs } from './remoteok';
+import { fetchAdzunaJobs } from './adzuna';
+
+export const ALL_SOURCES = ['rapidapi', 'remotive', 'arbeitnow', 'jobicy', 'themuse', 'remoteok', 'adzuna'];
 
 export async function fetchAllJobs(
   query: string = 'Data Engineer',
-  sources: string[] = ['rapidapi', 'remotive', 'arbeitnow', 'jobicy', 'themuse']
+  sources: string[] = ALL_SOURCES
 ): Promise<JobsApiResponse> {
   const fetchers: Promise<Job[]>[] = [];
 
-  if (sources.includes('rapidapi')) fetchers.push(fetchRapidApiJobs(query));
-  if (sources.includes('remotive')) fetchers.push(fetchRemotiveJobs(query));
+  if (sources.includes('rapidapi'))  fetchers.push(fetchRapidApiJobs(query));
+  if (sources.includes('remotive'))  fetchers.push(fetchRemotiveJobs(query));
   if (sources.includes('arbeitnow')) fetchers.push(fetchArbeitnowJobs(query));
-  if (sources.includes('jobicy')) fetchers.push(fetchJobicyJobs(query));
-  if (sources.includes('themuse')) fetchers.push(fetchMuseJobs(query));
+  if (sources.includes('jobicy'))    fetchers.push(fetchJobicyJobs(query));
+  if (sources.includes('themuse'))   fetchers.push(fetchMuseJobs(query));
+  if (sources.includes('remoteok'))  fetchers.push(fetchRemoteOKJobs(query));
+  if (sources.includes('adzuna'))    fetchers.push(fetchAdzunaJobs(query));
 
   const results = await Promise.allSettled(fetchers);
 

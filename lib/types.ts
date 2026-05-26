@@ -14,7 +14,9 @@ export type JobSource =
   | 'arbeitnow'
   | 'jobicy'
   | 'usajobs'
-  | 'themuse';
+  | 'themuse'
+  | 'remoteok'
+  | 'adzuna';
 
 export interface Job {
   id: string;

@@ -64,6 +64,8 @@ export function sourceLabel(source: string): string {
     jobicy: 'Jobicy',
     usajobs: 'USA Jobs',
     themuse: 'The Muse',
+    remoteok: 'Remote OK',
+    adzuna: 'Adzuna',
   };
   return labels[source] ?? source;
 }
@@ -76,8 +78,18 @@ export function sourceBadgeColor(source: string): string {
     jobicy: 'bg-sky-100 text-sky-700',
     usajobs: 'bg-blue-100 text-blue-800',
     themuse: 'bg-violet-100 text-violet-700',
+    remoteok: 'bg-green-100 text-green-700',
+    adzuna: 'bg-yellow-100 text-yellow-700',
   };
   return colors[source] ?? 'bg-gray-100 text-gray-600';
+}
+
+export function safeString(val: unknown, fallback = ''): string {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number') return String(val);
+  // Objects (like JSON-LD salary) should never reach React as a child
+  return fallback;
 }
 
 export function stripHtml(html: string): string {

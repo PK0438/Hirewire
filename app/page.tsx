@@ -8,8 +8,10 @@ import JobList from '@/components/JobList';
 import JobDetailPane from '@/components/JobDetailPane';
 import StatsBar from '@/components/StatsBar';
 
+const DEFAULT_QUERY = 'Data Engineer';
+
 const DEFAULT_FILTERS: FilterState = {
-  query: 'Data Engineer',
+  query: DEFAULT_QUERY,
   jobType: 'all',
   source: 'all',
   dateRange: 'all',
@@ -18,7 +20,8 @@ const DEFAULT_FILTERS: FilterState = {
 
 export default function HomePage() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [inputQuery, setInputQuery] = useState('Data Engineer');
+  const [inputQuery, setInputQuery] = useState(DEFAULT_QUERY);
+  const [activeRole, setActiveRole] = useState(DEFAULT_QUERY);
   const [apiData, setApiData] = useState<JobsApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +29,7 @@ export default function HomePage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchJobs = useCallback(async (query: string, sources?: string) => {
+  const fetchJobs = useCallback(async (query: string, source?: string) => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -36,7 +39,7 @@ export default function HomePage() {
 
     try {
       const params = new URLSearchParams({ query });
-      if (sources && sources !== 'all') params.set('sources', sources);
+      if (source && source !== 'all') params.set('sources', source);
 
       const res = await fetch(`/api/jobs?${params}`, { signal: ctrl.signal });
       if (!res.ok) throw new Error('Failed to fetch jobs');
@@ -52,13 +55,25 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetchJobs(filters.query, filters.source !== 'all' ? filters.source : undefined);
+    fetchJobs(DEFAULT_QUERY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSearch = () => {
-    const updated = { ...filters, query: inputQuery };
-    setFilters(updated);
-    fetchJobs(inputQuery, filters.source !== 'all' ? filters.source : undefined);
+  // Triggered by the search button / Enter key in Header
+  const handleSearch = (queryOverride?: string) => {
+    const q = queryOverride ?? inputQuery;
+    setInputQuery(q);
+    setActiveRole(q);
+    setFilters((f) => ({ ...f, query: q }));
+    fetchJobs(q, filters.source !== 'all' ? filters.source : undefined);
+  };
+
+  // Triggered by role chips in FilterBar
+  const handleRoleSelect = (query: string) => {
+    setActiveRole(query);
+    setInputQuery(query);
+    setFilters((f) => ({ ...f, query }));
+    fetchJobs(query, filters.source !== 'all' ? filters.source : undefined);
   };
 
   const handleFilterChange = (patch: Partial<FilterState>) => {
@@ -86,11 +101,16 @@ export default function HomePage() {
       <Header
         query={inputQuery}
         onQueryChange={setInputQuery}
-        onSearch={handleSearch}
+        onSearch={() => handleSearch()}
         loading={loading}
       />
 
-      <FilterBar filters={filters} onFilterChange={handleFilterChange} />
+      <FilterBar
+        filters={filters}
+        activeRole={activeRole}
+        onFilterChange={handleFilterChange}
+        onRoleSelect={handleRoleSelect}
+      />
 
       <StatsBar
         total={visibleJobs.length}
@@ -116,10 +136,7 @@ export default function HomePage() {
         </div>
 
         {detailOpen && selectedJob && (
-          <JobDetailPane
-            job={selectedJob}
-            onClose={handleCloseDetail}
-          />
+          <JobDetailPane job={selectedJob} onClose={handleCloseDetail} />
         )}
       </div>
     </div>
