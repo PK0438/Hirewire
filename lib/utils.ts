@@ -84,6 +84,94 @@ export function sourceBadgeColor(source: string): string {
   return colors[source] ?? 'bg-gray-100 text-gray-600';
 }
 
+// All 50 US state abbreviations + DC
+const US_STATE_ABBREVS = new Set([
+  'al','ak','az','ar','ca','co','ct','de','fl','ga',
+  'hi','id','il','in','ia','ks','ky','la','me','md',
+  'ma','mi','mn','ms','mo','mt','ne','nv','nh','nj',
+  'nm','ny','nc','nd','oh','ok','or','pa','ri','sc',
+  'sd','tn','tx','ut','vt','va','wa','wv','wi','wy','dc',
+]);
+
+// Phrases that explicitly indicate a non-USA country
+const NON_USA_COUNTRIES = [
+  'united kingdom','great britain',' uk ','( uk)','[uk]',
+  'england','scotland','wales','ireland',
+  'canada','australia','new zealand','india','germany',
+  'france','netherlands','spain','italy','portugal',
+  'sweden','norway','denmark','finland','switzerland',
+  'austria','belgium','poland','brazil','argentina',
+  'mexico','singapore','japan','china','south korea',
+  'philippines','pakistan','bangladesh','nigeria',
+  'south africa','kenya','ghana','egypt','israel',
+  'turkey','russia','ukraine','romania','czech',
+  'hungary','slovakia','croatia','serbia','bulgaria',
+  'latvia','lithuania','estonia','malta','cyprus',
+  'luxembourg','liechtenstein','monaco','andorra',
+  'europe','asia','africa','latin america','emea',
+];
+
+export function isUSAOrRemote(location: string, isRemote: boolean): boolean {
+  // Explicitly marked remote — always include
+  if (isRemote) return true;
+
+  const loc = location.toLowerCase().trim();
+
+  // Remote / WFH keywords in location string
+  if (
+    loc.includes('remote') ||
+    loc.includes('work from home') ||
+    loc.includes('wfh') ||
+    loc.includes('anywhere') ||
+    loc.includes('worldwide') ||
+    loc.includes('global') ||
+    loc === '' ||
+    loc === 'n/a'
+  ) return true;
+
+  // Explicit non-USA country names — reject early
+  if (NON_USA_COUNTRIES.some((c) => loc.includes(c))) return false;
+
+  // Positive USA signals
+  if (
+    loc.includes('united states') ||
+    loc.includes(' usa') ||
+    loc.includes(',usa') ||
+    loc.includes('u.s.a') ||
+    loc.includes('u.s.') ||
+    loc.includes('america')
+  ) return true;
+
+  // Pattern: "City, ST" where ST is a 2-letter US state abbreviation
+  // e.g. "Austin, TX"  "New York, NY"  "Tampa, Florida, United States"
+  const stateMatch = loc.match(/,\s*([a-z]{2})\b/g);
+  if (stateMatch) {
+    for (const m of stateMatch) {
+      const abbr = m.replace(/[,\s]/g, '').toLowerCase();
+      if (US_STATE_ABBREVS.has(abbr)) return true;
+    }
+  }
+
+  // Full state name in location string
+  const US_STATE_NAMES = [
+    'alabama','alaska','arizona','arkansas','california','colorado',
+    'connecticut','delaware','florida','georgia','hawaii','idaho',
+    'illinois','indiana','iowa','kansas','kentucky','louisiana',
+    'maine','maryland','massachusetts','michigan','minnesota',
+    'mississippi','missouri','montana','nebraska','nevada',
+    'new hampshire','new jersey','new mexico','new york',
+    'north carolina','north dakota','ohio','oklahoma','oregon',
+    'pennsylvania','rhode island','south carolina','south dakota',
+    'tennessee','texas','utah','vermont','virginia','washington',
+    'west virginia','wisconsin','wyoming','washington d.c',
+  ];
+  if (US_STATE_NAMES.some((s) => loc.includes(s))) return true;
+
+  // If location is ambiguous (no country signal at all), include it
+  // so we don't accidentally hide legitimate remote-friendly jobs
+  return true;
+}
+
 export function safeString(val: unknown, fallback = ''): string {
   if (val === null || val === undefined) return fallback;
   if (typeof val === 'string') return val;

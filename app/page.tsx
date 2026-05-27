@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Job, JobsApiResponse, FilterState } from '@/lib/types';
+import { isUSAOrRemote } from '@/lib/utils';
 import Header from '@/components/Header';
 import FilterBar from '@/components/FilterBar';
 import JobList from '@/components/JobList';
@@ -147,6 +148,9 @@ function getFilteredJobs(jobs: Job[], filters: FilterState): Job[] {
   const q = filters.query.toLowerCase();
 
   return jobs.filter((job) => {
+    // Always hide non-USA jobs unless remote/WFH
+    if (!isUSAOrRemote(job.location, job.isRemote)) return false;
+
     if (
       q &&
       !job.title.toLowerCase().includes(q) &&
